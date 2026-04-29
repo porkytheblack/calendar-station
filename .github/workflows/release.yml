@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Don't kill an in-flight publish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # Needed for `npm publish --provenance` OIDC.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: "Plan: which packages need publishing"
+        id: plan
+        run: |
+          to_publish=""
+          for dir in packages/*/; do
+            pkg=$(basename "$dir")
+            name=$(node -p "require('./packages/$pkg/package.json').name")
+            version=$(node -p "require('./packages/$pkg/package.json').version")
+            private=$(node -p "require('./packages/$pkg/package.json').private || false")
+            if [[ "$private" == "true" ]]; then
+              echo "::notice::$name is private — skipping"
+              continue
+            fi
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "::notice::$name@$version already on npm — skipping"
+            else
+              echo "::notice::$name@$version needs publishing"
+              to_publish="$to_publish $pkg"
+            fi
+          done
+          echo "to_publish=${to_publish# }" >>"$GITHUB_OUTPUT"
+
+      - name: Typecheck
+        if: steps.plan.outputs.to_publish != ''
+        run: pnpm typecheck
+
+      - name: Test
+        if: steps.plan.outputs.to_publish != ''
+        run: pnpm test
+
+      - name: Build
+        if: steps.plan.outputs.to_publish != ''
+        run: pnpm build
+
+      - name: Publish
+        if: steps.plan.outputs.to_publish != ''
+        run: |
+          for pkg in ${{ steps.plan.outputs.to_publish }}; do
+            echo "::notice::Publishing $pkg"
+            (cd "packages/$pkg" && pnpm publish --access public --no-git-checks --provenance)
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Tag releases
+        if: steps.plan.outputs.to_publish != ''
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for pkg in ${{ steps.plan.outputs.to_publish }}; do
+            version=$(node -p "require('./packages/$pkg/package.json').version")
+            tag="${pkg}@${version}"
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              echo "::notice::tag $tag already exists — skipping"
+              continue
+            fi
+            git tag -a "$tag" -m "$tag"
+            git push origin "$tag"
+          done

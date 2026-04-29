@@ -31,4 +31,8 @@ app.post("/webhooks/calendar", async (req, res) => {
 
 Schedule `station.providers.google.renewExpiringChannels()` from your cron — channels expire in ~7 days and Google has no renewal API; this creates a fresh channel before the old one dies and stops the old channel after a successful swap.
 
+## Setting up Google OAuth
+
+Required scope: `https://www.googleapis.com/auth/calendar.readonly`. Step-by-step setup (Cloud project, consent screen, client id/secret, webhook HTTPS requirements, refresh-token script) lives in [`guides/google-oauth-setup.md`](https://github.com/porkytheblack/calendar-station/blob/main/guides/google-oauth-setup.md).
+
 Full design and API surface: [github.com/porkytheblack/calendar-station](https://github.com/porkytheblack/calendar-station).

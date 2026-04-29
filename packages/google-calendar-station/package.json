@@ -1,6 +1,6 @@
 {
   "name": "google-calendar-station",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -27,10 +27,16 @@
       "import": "./dist/effect.js"
     }
   },
-  "files": ["dist", "src", "README.md"],
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    ".claude"
+  ],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "node ../../scripts/sync-skill.mjs"
   },
   "dependencies": {
     "@googleapis/calendar": "^9.0.0",

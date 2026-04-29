@@ -16,8 +16,22 @@ calendar-station/
 │   ├── calendar-station/                # core
 │   ├── google-calendar-station/         # Google Calendar provider
 │   └── calendar-station-conformance/    # store conformance suite
-└── examples/
-    └── basic-sqlite/                    # runnable smoke + sqlite Store adapter
+├── examples/
+│   └── basic-sqlite/                    # runnable smoke + sqlite Store adapter
+├── guides/
+│   └── google-oauth-setup.md            # operator-facing OAuth walkthrough
+└── .claude/skills/calendar-station/     # Claude Agent skill (ships in npm tarballs)
+```
+
+## Claude Agent skill
+
+The repo ships a [Claude Agent skill](./.claude/skills/calendar-station/SKILL.md) that teaches other agents how to integrate the stack — API surface, store contract, error tags, log events, OAuth setup, webhook mounting, paste-ready templates. The same skill is bundled inside the published `calendar-station` and `google-calendar-station` npm tarballs (under `.claude/skills/calendar-station/`), so an agent that installs either package finds it locally without an extra fetch.
+
+The canonical copy lives at the repo root; each publishable package's `prepack` script syncs it into the package directory at pack time via `scripts/sync-skill.mjs`. To validate locally:
+
+```sh
+cd packages/calendar-station && pnpm pack         # builds calendar-station-<version>.tgz
+tar -tzf calendar-station-*.tgz | grep .claude     # should list 16 files
 ```
 
 ## Develop
@@ -27,6 +41,10 @@ pnpm install
 pnpm typecheck     # tsc -b
 pnpm test          # vitest across all packages + examples
 ```
+
+## Setting up Google OAuth
+
+Before you can register a calendar, you need a Google Cloud project with the Calendar API enabled, an OAuth 2.0 Client ID, and a refresh token for the user whose calendar you want to watch. See [`guides/google-oauth-setup.md`](./guides/google-oauth-setup.md) for the full walkthrough — required scopes (`calendar.readonly`), webhook HTTPS requirements, channel-token-secret generation, and a copy-pasteable refresh-token script.
 
 ## Quickstart
 
