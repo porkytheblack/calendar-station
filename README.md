@@ -28,6 +28,10 @@ pnpm typecheck     # tsc -b
 pnpm test          # vitest across all packages + examples
 ```
 
+## Setting up Google OAuth
+
+Before you can register a calendar, you need a Google Cloud project with the Calendar API enabled, an OAuth 2.0 Client ID, and a refresh token for the user whose calendar you want to watch. See [`guides/google-oauth-setup.md`](./guides/google-oauth-setup.md) for the full walkthrough — required scopes (`calendar.readonly`), webhook HTTPS requirements, channel-token-secret generation, and a copy-pasteable refresh-token script.
+
 ## Quickstart
 
 ```ts
