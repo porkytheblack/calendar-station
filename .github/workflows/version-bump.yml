@@ -1,0 +1,91 @@
+name: Version bump
+
+# Auto-bumps the patch version of any package whose source files changed in
+# a PR but whose `package.json` version still matches main. Commits the bump
+# back to the PR branch as github-actions[bot]. Devs who want a minor/major
+# bump should update package.json themselves on the PR — this workflow only
+# fires when the PR's version is unchanged from main.
+#
+# Note: commits pushed with the default GITHUB_TOKEN do NOT retrigger
+# workflow runs (GitHub safety). The bump is metadata-only, so that's fine.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: version-bump-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    name: Bump patch on touched, unbumped packages
+    # Skip for forks (GITHUB_TOKEN can't push to a fork) and drafts.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Detect, compare, and bump
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+
+          # Workspace packages whose source files changed in this PR.
+          touched=$(git diff --name-only origin/main...HEAD -- packages/ \
+                    | awk -F/ '$2 != "" {print $2}' | sort -u)
+
+          if [[ -z "$touched" ]]; then
+            echo "::notice::No packages/ files changed — nothing to bump."
+            exit 0
+          fi
+
+          bumped_files=()
+          for pkg in $touched; do
+            [[ -d "packages/$pkg" ]] || continue
+            pkg_json="packages/$pkg/package.json"
+            [[ -f "$pkg_json" ]] || continue
+
+            pr_version=$(node -p "require('./$pkg_json').version")
+
+            if git cat-file -e "origin/main:$pkg_json" 2>/dev/null; then
+              main_version=$(git show "origin/main:$pkg_json" \
+                | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))")
+            else
+              echo "::notice::packages/$pkg is new — leaving version as-is ($pr_version)"
+              continue
+            fi
+
+            if [[ "$pr_version" != "$main_version" ]]; then
+              echo "::notice::packages/$pkg: PR=$pr_version, main=$main_version — already differs, no bump"
+              continue
+            fi
+
+            (cd "packages/$pkg" && npm version patch --no-git-tag-version >/dev/null)
+            new_version=$(node -p "require('./$pkg_json').version")
+            echo "::notice::packages/$pkg: bumped $pr_version -> $new_version"
+            bumped_files+=("$pkg_json")
+          done
+
+          if [[ ${#bumped_files[@]} -eq 0 ]]; then
+            echo "::notice::No packages needed bumping."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${bumped_files[@]}"
+          git commit -m "chore: bump package versions"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
