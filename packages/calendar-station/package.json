@@ -1,6 +1,6 @@
 {
   "name": "calendar-station",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -27,7 +27,12 @@
       "import": "./dist/effect.js"
     }
   },
-  "files": ["dist", "src", "README.md", ".claude"],
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    ".claude"
+  ],
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run",
