@@ -27,10 +27,11 @@
       "import": "./dist/effect.js"
     }
   },
-  "files": ["dist", "src", "README.md"],
+  "files": ["dist", "src", "README.md", ".claude"],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "node ../../scripts/sync-skill.mjs"
   },
   "dependencies": {
     "effect": "^3.10.0"
