@@ -1,0 +1,19 @@
+{
+  "name": "basic-sqlite-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node --experimental-strip-types src/main.ts"
+  },
+  "dependencies": {
+    "calendar-station": "workspace:*",
+    "google-calendar-station": "workspace:*",
+    "better-sqlite3": "^11.5.0"
+  },
+  "devDependencies": {
+    "calendar-station-conformance": "workspace:*",
+    "@types/better-sqlite3": "^7.6.11"
+  }
+}

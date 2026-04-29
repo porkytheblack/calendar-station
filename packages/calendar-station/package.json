@@ -1,0 +1,38 @@
+{
+  "name": "calendar-station",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/porkytheblack/calendar-station.git",
+    "directory": "packages/calendar-station"
+  },
+  "homepage": "https://github.com/porkytheblack/calendar-station#readme",
+  "bugs": {
+    "url": "https://github.com/porkytheblack/calendar-station/issues"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./effect": {
+      "types": "./dist/effect.d.ts",
+      "import": "./dist/effect.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "effect": "^3.10.0"
+  }
+}
